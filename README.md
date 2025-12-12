@@ -42,7 +42,7 @@ https://github.com/user-attachments/assets/29693017-2f8c-4a74-a4fd-99388169822f
 |----------|---------|-------------|
 | `LOG_LEVEL` | `warn` | Console log level (`debug`, `info`, `warn`, `error`, `critical`) |
 | `FILE_LOG_LEVEL` | `debug` | File log level (`debug`, `info`, `warn`, `error`, `critical`) |
-| `LOG_FOLDER` | `` (empty) | Directory for log files. If empty, file logging is disabled |
+| `LOG_FOLDER` | (empty) | Directory for log files. If empty, file logging is disabled |
 | `LOG_USE_COLOR` | `true` | Enable colored console output (`true`/`false`) |
 
 ### MPPI
