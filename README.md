@@ -27,6 +27,13 @@ LOG_LEVEL=info python3 experiments/mppi/main_accelerated3.py
 MPPI_BACKEND=cupy MPPI_DTYPE=float32 LOG_LEVEL=info python3 experiments/mppi/main_accelerated3.py
 ```
 
+![animation2_1](https://github.com/user-attachments/assets/9b35877c-0bb0-490f-8f96-53b6890ffc3c)
+
+## Showcase
+
+### Go2 deployment
+https://github.com/user-attachments/assets/29693017-2f8c-4a74-a4fd-99388169822f
+
 ## Environment Variables
 
 ### Logging
@@ -45,8 +52,3 @@ MPPI_BACKEND=cupy MPPI_DTYPE=float32 LOG_LEVEL=info python3 experiments/mppi/mai
 | `MPPI_BACKEND` | `numpy` | Computation backend (`numpy` or `cupy` for GPU) |
 | `MPPI_DTYPE` | `float64` | Floating point precision (`float32` or `float64`) |
 | `MPPI_THREADS_PER_BLOCK` | `256` | CUDA threads per block (only used with `cupy` backend) |
-
-## Showcase
-
-### Go2 deployment
-https://github.com/user-attachments/assets/29693017-2f8c-4a74-a4fd-99388169822f
