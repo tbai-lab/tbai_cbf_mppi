@@ -187,41 +187,23 @@ class ControlBarrierFunctionFactory:
     aliases = dict(c_x=center_x.name, c_y=center_y.name, w=width.name, h=height.name)
     return ControlBarrierFunctionNew(h1234.get_expr(substitute=True), self, aliases=aliases)
 
-  def union(self, cbfs, method="exact", substitute=False):
+  def _combine(self, cbfs, method, substitute, exact_fn, kappa_sign):
     if method not in ["exact", "approximate"]:
       raise ValueError(f"Invalid method: {method}")
-
-    # Combine all substituted values
     combined_subs = dict(itertools.chain.from_iterable([cbf.other_subs.items() for cbf in cbfs]))
-
+    exprs = [cbf.get_expr(substitute=substitute) for cbf in cbfs]
     if method == "exact":
-      h_expr = sp.Min(*[cbf.get_expr(substitute=substitute) for cbf in cbfs])
-      return ControlBarrierFunctionNew(h_expr, self, subs=combined_subs)
+      h_expr = exact_fn(*exprs)
+    else:
+      exps = [sp.exp(kappa_sign * self.kappa * e) for e in exprs]
+      h_expr = (kappa_sign / self.kappa) * sp.log(sum(exps))
+    return ControlBarrierFunctionNew(h_expr, self, subs=combined_subs)
 
-    if method == "approximate":
-      exps = [sp.exp(-self.kappa * cbf.get_expr(substitute=substitute)) for cbf in cbfs]
-      new_expr = -(1 / self.kappa) * sp.log(sum(exps))
-      return ControlBarrierFunctionNew(new_expr, self, subs=combined_subs)
-
-    raise ValueError(f"Invalid method: {method}")
+  def union(self, cbfs, method="exact", substitute=False):
+    return self._combine(cbfs, method, substitute, exact_fn=sp.Min, kappa_sign=-1)
 
   def intersection(self, cbfs, method="exact", substitute=False):
-    if method not in ["exact", "approximate"]:
-      raise ValueError(f"Invalid method: {method}")
-
-    # Combine all substituted values
-    combined_subs = dict(itertools.chain.from_iterable([cbf.other_subs.items() for cbf in cbfs]))
-
-    if method == "exact":
-      h_expr = sp.Max(*[cbf.get_expr(substitute=substitute) for cbf in cbfs])
-      return ControlBarrierFunctionNew(h_expr, self, subs=combined_subs)
-
-    if method == "approximate":
-      exps = [sp.exp(self.kappa * cbf.get_expr(substitute=substitute)) for cbf in cbfs]
-      new_expr = (1 / self.kappa) * sp.log(sum(exps))
-      return ControlBarrierFunctionNew(new_expr, self, subs=combined_subs)
-
-    raise ValueError(f"Invalid method: {method}")
+    return self._combine(cbfs, method, substitute, exact_fn=sp.Max, kappa_sign=1)
 
 
 class CasadiControlBarrierFunction:
@@ -355,31 +337,17 @@ class ControlBarrierFunctionMemoryEnvelope(ControlBarrierFunctionMemory):
     self.memory_cbf.h_expr = final_expr
     return x_symbols, y_symbols
 
-  def get_cov(self, symbols=None):
+  def _gather_data(self, symbols=None):
     symbols = symbols if symbols is not None else self.expr_symbols
-    assert len(symbols) > 0, "No symbols to compute covariance for!"
-    data = list()
-    for vals in self.memory:
-      point = list()
-      for symbol in symbols:
-        idx = self.expr_symbols.index(symbol)
-        point.append(vals[idx])
-      data.append(point)
-    data = np.array(data)
-    return np.cov(data, rowvar=False)
+    assert len(symbols) > 0, "No symbols to gather data for!"
+    indices = [self.expr_symbols.index(s) for s in symbols]
+    return np.array([[vals[i] for i in indices] for vals in self.memory])
+
+  def get_cov(self, symbols=None):
+    return np.cov(self._gather_data(symbols), rowvar=False)
 
   def get_mean(self, symbols=None):
-    symbols = symbols if symbols is not None else self.expr_symbols
-    assert len(symbols) > 0, "No symbols to compute mean for!"
-    data = list()
-    for vals in self.memory:
-      point = list()
-      for symbol in symbols:
-        idx = self.expr_symbols.index(symbol)
-        point.append(vals[idx])
-      data.append(point)
-    data = np.array(data)
-    return np.mean(data, axis=0)
+    return np.mean(self._gather_data(symbols), axis=0)
 
   def get_envelope_points(self, P=20, scaler=1.0):
     mean = self.get_mean()

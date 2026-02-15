@@ -19,8 +19,8 @@ logger = get_logger(__name__)
 
 def jit_expr(expr: sp.Expr, cse=True, parallel=False, symbols=None, device=True, backend=None, stype=None):
   """Take an expression, convert it into a callable function and jit it. Works for both numpy and cuda backends."""
-  backend = get_default_backend()
-  stype = get_default_dtype()
+  backend = get_default_backend() if backend is None else backend
+  stype = get_default_dtype() if stype is None else stype
   expr_symbols = [s.name for s in sorted(expr.free_symbols, key=lambda x: x.name)]
   symbols = symbols if symbols is not None else expr_symbols
   assert sorted(symbols) == expr_symbols, (

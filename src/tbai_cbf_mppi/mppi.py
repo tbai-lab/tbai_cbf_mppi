@@ -116,25 +116,17 @@ class MppiCost:
     self.fn = fn
     self.backend = get_default_backend() if backend is None else backend
     self.dtype = get_default_dtype() if dtype is None else dtype
-    self.eval_fn = self.evaluate_numpy if self.backend == "numpy" else self.evaluate_cuda
+    self._xp = np if self.backend == "numpy" else cp
 
-  def evaluate_numpy(self, *args, **kwargs):
-    args = [arg if isinstance(arg, np.ndarray) else np.array(arg, dtype=self.dtype) for arg in args]
-    kwargs = {
-      k: kwargs[k] if isinstance(kwargs[k], np.ndarray) else np.array(kwargs[k], dtype=self.dtype) for k in kwargs
-    }
-    return self.fn(*args, **kwargs)
-
-  def evaluate_cuda(self, *args, **kwargs):
-    args = [arg if isinstance(arg, cp.ndarray) else cp.array(arg, dtype=self.dtype) for arg in args]
-    kwargs = {
-      k: kwargs[k] if isinstance(kwargs[k], cp.ndarray) else cp.array(kwargs[k], dtype=self.dtype) for k in kwargs
-    }
-    return self.fn(*args, **kwargs)
+  def _ensure_array(self, arg):
+    xp = self._xp
+    if isinstance(arg, xp.ndarray) and arg.dtype == self.dtype:
+      return arg
+    return xp.array(arg, dtype=self.dtype)
 
   def evaluate(self, X, U, S, other_inputs):
     """X is of shape (B, T, 2), U is of shape (B, T, 2) - it is states and actions respectively, S is of shape (B,) and is the buffer where the cost should be accumulated"""
-    return self.eval_fn(X, U, *other_inputs, S)
+    return self.fn(*[self._ensure_array(a) for a in (X, U, *other_inputs)], self._ensure_array(S))
 
 
 @dataclass
@@ -145,32 +137,10 @@ class MppiCbfCostInputs:
 
 
 class MppiCbfCost(MppiCost):
-  def __init__(self, fn: Callable, backend: str = None, dtype: str = None):
-    super().__init__(fn, backend, dtype)
-    self.eval_fn = self.evaluate_numpy if self.backend == "numpy" else self.evaluate_cuda
-
-  def evaluate_numpy(self, X, U, S, other_inputs: MppiCbfCostInputs):
-    other_inputs.vectors_ew = [
-      v if isinstance(v, np.ndarray) and v.dtype == self.dtype else np.array(v, dtype=self.dtype)
-      for v in other_inputs.vectors_ew
-    ]
-    other_inputs.vectors_vw = [
-      v if isinstance(v, np.ndarray) and v.dtype == self.dtype else np.array(v, dtype=self.dtype)
-      for v in other_inputs.vectors_vw
-    ]
-    return self.fn(X, U, *other_inputs.scalars, *other_inputs.vectors_ew, *other_inputs.vectors_vw, S)
-
-  def evaluate_cuda(self, X, U, S, other_inputs: MppiCbfCostInputs):
-    other_inputs.vectors_ew = [
-      v if isinstance(v, cp.ndarray) else cp.array(v, dtype=self.dtype) for v in other_inputs.vectors_ew
-    ]
-    other_inputs.vectors_vw = [
-      v if isinstance(v, cp.ndarray) else cp.array(v, dtype=self.dtype) for v in other_inputs.vectors_vw
-    ]
-    return self.fn(X, U, *other_inputs.scalars, *other_inputs.vectors_ew, *other_inputs.vectors_vw, S)
-
   def evaluate(self, X, U, S, other_inputs: MppiCbfCostInputs):
-    return self.eval_fn(X, U, S, other_inputs)
+    other_inputs.vectors_ew = [self._ensure_array(v) for v in other_inputs.vectors_ew]
+    other_inputs.vectors_vw = [self._ensure_array(v) for v in other_inputs.vectors_vw]
+    return self.fn(X, U, *other_inputs.scalars, *other_inputs.vectors_ew, *other_inputs.vectors_vw, S)
 
 
 def discretize_system(A, B, dt):
@@ -229,13 +199,16 @@ def get_hat_system(A: np.ndarray, B: np.ndarray, T: int, dtype=np.float32):
 def get_cost_function_parameterized(
   stage_cost,
   terminal_cost,
-  scalar_args=[],
-  vector_args_vw=[],
-  vector_args_ew=[],
+  scalar_args=None,
+  vector_args_vw=None,
+  vector_args_ew=None,
   stype=None,
   backend=None,
   threads_per_block=None,
 ):
+  scalar_args = scalar_args or []
+  vector_args_vw = vector_args_vw or []
+  vector_args_ew = vector_args_ew or []
   # scalar_args = constant for each rollout for every time step
   # vector_args_ew = element-wise for each time step (per-rollout per-time-step)
   # vector_args_vw = vector-wise for each time step (per-rollout, constant for each time step)
@@ -270,25 +243,24 @@ def get_cost_function_parameterized(
   einsum_str = einsum_str.format(args=args, vectors_ev=vectors_ev, vectors_vv=vectors_vv)
 
   args_str = ", ".join(
-    [f"{scalar_args[i]}" for i in range(len(scalar_args))]
-    + [f"{vector_args_ew[i]}" for i in range(len(vector_args_ew))]
-    + [f"{vector_args_vw[i]}" for i in range(len(vector_args_vw))]
+    [str(a) for a in scalar_args]
+    + [str(a) for a in vector_args_ew]
+    + [str(a) for a in vector_args_vw]
   )
   args_str = args_str + ", " if args_str else ""
 
   if backend == "numpy":
     use_str = ", ".join(
-      [f"{scalar_args[i]}={scalar_args[i]}" for i in range(len(scalar_args))]
-      + [f"{vector_args_ew[i]}={vector_args_ew[i]}[t]" for i in range(len(vector_args_ew))]
-      + [f"{vector_args_vw[i]}={vector_args_vw[i]}" for i in range(len(vector_args_vw))]
+      [f"{a}={a}" for a in scalar_args]
+      + [f"{a}={a}[t]" for a in vector_args_ew]
+      + [f"{a}={a}" for a in vector_args_vw]
     )
-
-  if backend == "cupy":
+  elif backend == "cupy":
     ## Cuda backend does not support keyword arguments
     use_str = ", ".join(
-      [f"{scalar_args[i]}" for i in range(len(scalar_args))]
-      + [f"{vector_args_ew[i]}[t]" for i in range(len(vector_args_ew))]
-      + [f"{vector_args_vw[i]}" for i in range(len(vector_args_vw))]
+      [str(a) for a in scalar_args]
+      + [f"{a}[t]" for a in vector_args_ew]
+      + [str(a) for a in vector_args_vw]
     )
 
   use_str = use_str + ", " if use_str else ""
@@ -344,15 +316,9 @@ def get_cost_function_parameterized(
   assert cc is not None, f"Invalid backend: {backend}"
   cc = textwrap.dedent(cc)
 
-  old_code = False
-  if old_code:
-    logger.debug(
-      f"Stage cost source:\n{textwrap.dedent(stage_cost._tbai_cbf_mppi_source)}\nTerminal cost source:\n{textwrap.dedent(terminal_cost._tbai_cbf_mppi_source)}\n{cc}"
-    )
-  else:
-    logger.debug(
-      f"Stage cost source:\n{textwrap.dedent(stage_cost._tbai_cbf_mppi_new_source)}\nTerminal cost source:\n{textwrap.dedent(terminal_cost._tbai_cbf_mppi_new_source)}\n{cc}"
-    )
+  logger.debug(
+    f"Stage cost source:\n{textwrap.dedent(stage_cost._tbai_cbf_mppi_new_source)}\nTerminal cost source:\n{textwrap.dedent(terminal_cost._tbai_cbf_mppi_new_source)}\n{cc}"
+  )
 
   ns = {**locals()}
   exec(cc, ns)
@@ -362,15 +328,11 @@ def get_cost_function_parameterized(
     return fn
 
   ## Create a small wrapper function to call the cuda function
-  if backend == "cupy":
+  def wrapper(x, u, *args, **kwargs):
+    blocks_per_grid = (x.shape[0] + threads_per_block - 1) // threads_per_block
+    fn[blocks_per_grid, threads_per_block](x, u, *args, **kwargs)
 
-    def wrapper(x, u, *args, **kwargs):
-      blocks_per_grid = (x.shape[0] + threads_per_block - 1) // threads_per_block
-      fn[blocks_per_grid, threads_per_block](x, u, *args, **kwargs)
-
-    return wrapper
-
-  raise ValueError(f"Invalid backend: {backend}")
+  return wrapper
 
 
 def jit_expr_v2t(expr: sp.Expr, cse=True, parallel=False, symbols=None, backend=None, stype=None):
@@ -430,17 +392,15 @@ class AcceleratedSafetyMPPI:
     if backend == "numpy":
       self.backend = np
       self.convolve = lambda xx, b, axis, mode, cval: np_convolve1d(xx, b, axis=axis, mode=mode, cval=cval)
-    if backend == "cupy":
+    elif backend == "cupy":
       assert has_cuda, "Numba CUDA is not installed"
       self.backend = cp
       self.convolve = lambda xx, b, axis, mode, cval: cp_convolve1d(xx, b, axis=axis, mode=mode, cval=cval)
+    else:
+      raise ValueError(f"Invalid backend: {backend}")
 
-    if stype == "float64":
-      self.stype = self.backend.float64
-    if stype == "float32":
-      self.stype = self.backend.float32
-    if stype == "float16":
-      self.stype = self.backend.float16
+    dtype_map = {"float64": self.backend.float64, "float32": self.backend.float32, "float16": self.backend.float16}
+    self.stype = dtype_map[stype]
 
     assert isinstance(system, SimpleSingleIntegrator2D)
     self.system = system
@@ -493,13 +453,10 @@ class AcceleratedSafetyMPPI:
 
   def reset_relaxation(self, init: bool = False):
     if init:
-      self.relaxation_alphas = [1 for i in range(self.transition_time)]
-      while len(self.relaxation_alphas) < self.T:
-        self.relaxation_alphas.append(1)
+      self.relaxation_alphas = [1 for _ in range(self.transition_time)]
     else:
       self.relaxation_alphas = np.linspace(0, 1, self.transition_time, dtype=self.stype).tolist()
-      while len(self.relaxation_alphas) < self.T:
-        self.relaxation_alphas.append(1)
+    self.relaxation_alphas.extend([1] * (self.T - len(self.relaxation_alphas)))
 
   def calc_control_input(self, observed_x: np.ndarray, cost_fn_args, x_desired: np.ndarray = None):
     # Set u to be the LQR controller response
@@ -566,16 +523,13 @@ class AcceleratedSafetyMPPI:
 
     if self.backend == np:
       return u[0], u, optimal_traj, sampled_traj_list
-
-    if self.backend == cp:
+    else:
       return (
         u[0].get(),
         u.get(),
         optimal_traj.get() if optimal_traj is not None else None,
         sampled_traj_list.get() if sampled_traj_list is not None else None,
       )
-
-    raise RuntimeError(f"Backend {self.backend} is invalid!")
 
   def calculate_epsilon(self, sigma: np.ndarray, size_sample: int, size_time_step: int, size_dim_u: int):
     mu = self.backend.zeros((size_dim_u))

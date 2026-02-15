@@ -178,19 +178,14 @@ class PDRegulator:
     self.kd = kd
     self.last_error = None
 
-  def solve(self, desired, current, dt=1.0):
-    error = desired - current
-    self.last_error = error if self.last_error is None else self.last_error
-
-    control = self.kp * error + self.kd * (error - self.last_error) / dt
-    self.last_error = error
-    return control
-
   def solve_error(self, error, dt=1.0):
     self.last_error = error if self.last_error is None else self.last_error
     control = self.kp * error + self.kd * (error - self.last_error) / dt
     self.last_error = error
     return control
+
+  def solve(self, desired, current, dt=1.0):
+    return self.solve_error(desired - current, dt)
 
 
 if __name__ == "__main__":
