@@ -1,4 +1,6 @@
-# tbai_cbf_mppi 
+# Towards Better Athletic Intelligence - CBF + MPPI
+
+A toolkit for working with control barrier functions (CBFs) symbolically. With this toolkit, one can define safety constraints as symbolic expressions, visualize them, compose them via union and intersection operations and finally compile them to high-performance native CPU or CUDA code. Generated JIT-compiled CBFs are readily usable in other modules, an example is an custom MPPI implementation, likewise included in this package.
 
 ## Installation
 
