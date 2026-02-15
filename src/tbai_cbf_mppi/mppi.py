@@ -352,9 +352,10 @@ def get_cost_function_parameterized(
       f"Stage cost source:\n{textwrap.dedent(stage_cost._tbai_cbf_mppi_new_source)}\nTerminal cost source:\n{textwrap.dedent(terminal_cost._tbai_cbf_mppi_new_source)}\n{cc}"
     )
 
-  exec(cc, locals())
+  ns = {**locals()}
+  exec(cc, ns)
 
-  fn = locals()["total_cost_vec"]
+  fn = ns["total_cost_vec"]
   if backend == "numpy":
     return fn
 
@@ -397,8 +398,9 @@ def jit_expr_v2t(expr: sp.Expr, cse=True, parallel=False, symbols=None, backend=
   """
   cc = textwrap.dedent(cc)
   logger.debug(f"Jitted expression: {expr}\n\n{cc}")
-  exec(cc, locals())
-  fn = locals()["jitted_wrapper"]
+  ns = {**locals()}
+  exec(cc, ns)
+  fn = ns["jitted_wrapper"]
   return fn
 
 
