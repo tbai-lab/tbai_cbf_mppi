@@ -44,6 +44,8 @@ def jit_expr(expr: sp.Expr, cse=True, parallel=False, symbols=None, device=True,
       return numba.jit([annotation], nopython=True, parallel=parallel)(fn)
     elif backend == "cupy":
       assert has_cuda, "Numba CUDA is not installed"
+      if stype == "float16":
+        return nbcuda.jit(nopython=True, device=device)(fn)
       return nbcuda.jit([annotation], nopython=True, device=device)(fn)
     else:
       raise ValueError(f"Invalid backend: {backend}, supported backends are: numpy, cuda")

@@ -35,7 +35,9 @@ class MppiConfig:
 
   def __post_init__(self):
     assert self.backend in ["numpy", "cupy"], f"Invalid backend: {self.backend}"
-    assert self.dtype in ["float64", "float32"], f"Invalid dtype: {self.dtype}"
+    assert self.dtype in ["float64", "float32", "float16"], f"Invalid dtype: {self.dtype}"
+    if self.dtype == "float16":
+      assert self.backend == "cupy", "float16 is only supported with the cupy backend"
     logger.info(f"Setting default backend to {self.backend}")
     logger.info(f"Setting default dtype to {self.dtype}")
     if self.backend == "cupy":
@@ -56,7 +58,7 @@ def set_default_backend(backend: str):
 
 
 def set_default_dtype(dtype: str):
-  assert dtype in ["float64", "float32"], f"Invalid dtype: {dtype}"
+  assert dtype in ["float64", "float32", "float16"], f"Invalid dtype: {dtype}"
   _mppi_config.dtype = dtype
   logger.info(f"Setting default dtype to {dtype}")
 
@@ -437,6 +439,8 @@ class AcceleratedSafetyMPPI:
       self.stype = self.backend.float64
     if stype == "float32":
       self.stype = self.backend.float32
+    if stype == "float16":
+      self.stype = self.backend.float16
 
     assert isinstance(system, SimpleSingleIntegrator2D)
     self.system = system

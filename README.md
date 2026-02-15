@@ -41,6 +41,9 @@ LOG_LEVEL=info python3 experiments/mppi/main_accelerated3.py
 
 # Run MPPI example with GPU acceleration, float32 dtype
 MPPI_BACKEND=cupy MPPI_DTYPE=float32 LOG_LEVEL=info python3 experiments/mppi/main_accelerated3.py
+
+# Run MPPI example with GPU acceleration, float16 dtype
+MPPI_BACKEND=cupy MPPI_DTYPE=float16 LOG_LEVEL=info python3 experiments/mppi/main_accelerated3.py
 ```
 ![423174033-9b35877c-0bb0-490f-8f96-53b6890ffc3c](https://github.com/user-attachments/assets/6801b702-9624-436a-81b6-21aa8407743e)
 
@@ -66,5 +69,5 @@ https://github.com/user-attachments/assets/29693017-2f8c-4a74-a4fd-99388169822f
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MPPI_BACKEND` | `numpy` | Computation backend (`numpy` or `cupy` for GPU) |
-| `MPPI_DTYPE` | `float64` | Floating point precision (`float32` or `float64`) |
+| `MPPI_DTYPE` | `float64` | Floating point precision (`float16`, `float32`, or `float64`). `float16` requires `cupy` backend. |
 | `MPPI_THREADS_PER_BLOCK` | `256` | CUDA threads per block (only used with `cupy` backend) |
