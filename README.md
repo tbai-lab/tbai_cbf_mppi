@@ -2,6 +2,18 @@
 
 ## Installation
 
+### Using uv (recommended)
+
+```bash
+# Install project
+uv sync
+
+# Run an experiment
+uv run experiments/mppi/main_accelerated3.py
+```
+
+### Using micromamba
+
 ```bash
 "${SHELL}" <(curl -L micro.mamba.pm/install.sh) # You might have to source your config again
 
