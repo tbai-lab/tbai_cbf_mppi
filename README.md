@@ -5,8 +5,12 @@
 ### Using uv (recommended)
 
 ```bash
-# Install project
+# Install project (CPU only)
 uv sync
+
+# Install with GPU support (requires CUDA toolkit installed)
+uv sync --extra cuda13  # CUDA 13.x
+uv sync --extra cuda12  # CUDA 12.x
 
 # Run an experiment
 uv run experiments/mppi/main_accelerated3.py

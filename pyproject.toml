@@ -21,14 +21,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-vision=[
-    "depthai==3.0.0rc4",
-    "rerun-sdk==0.23.1",
-    "opencv-python==4.12.0.88",
-]
-all = [
-    "tbai_cbf_mppi[vision]",
-]
+cuda12=["cupy-cuda12x"]
+cuda13=["cupy-cuda13x"]
 
 [tool.ruff]
 line-length = 120
