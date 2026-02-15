@@ -32,6 +32,5 @@ indent-width = 2
 ignore = ["E731"]
 
 [tool.pytest]
-norecursedirs = "3rdparty/*"
 testpaths = ["tests"]
 
