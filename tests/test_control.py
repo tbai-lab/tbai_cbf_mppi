@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import pytest
 from tbai_cbf_mppi.cbf import ControlBarrierFunctionFactory
 from tbai_cbf_mppi.control import (
   VanillaSafetyFilterNew,

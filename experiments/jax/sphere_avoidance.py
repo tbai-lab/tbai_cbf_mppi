@@ -3,7 +3,6 @@
 import time
 import argparse
 
-import jax
 import jax.numpy as jnp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -195,7 +194,7 @@ def main(show_animation=True, device="cpu"):
     if optimal_trajectory is not None:
       optimal_trajectory_plot.set_data(optimal_trajectory[:, 0], optimal_trajectory[:, 1])
 
-  anim = FuncAnimation(fig, update, interval=33, frames=100)
+  _anim = FuncAnimation(fig, update, interval=33, frames=100)
   if show_animation:
     plt.show()
   else:

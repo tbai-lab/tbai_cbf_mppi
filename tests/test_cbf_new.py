@@ -3,7 +3,7 @@
 import numpy as np
 import sympy as sp
 import pytest
-from tbai_cbf_mppi.cbf import ControlBarrierFunctionFactory, ControlBarrierFunctionNew, CasadiControlBarrierFunction
+from tbai_cbf_mppi.cbf import ControlBarrierFunctionFactory, CasadiControlBarrierFunction
 
 
 def test_cbf_sphere():

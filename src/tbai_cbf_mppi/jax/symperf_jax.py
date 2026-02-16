@@ -2,7 +2,6 @@
 
 import sympy as sp
 import jax
-import jax.numpy as jnp
 
 
 def jit_expr(expr: sp.Expr, cse=True, symbols=None):

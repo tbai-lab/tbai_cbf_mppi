@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import jax.numpy as jnp
-import numpy as np
 import sympy as sp
 import pytest
 from tbai_cbf_mppi.jax.symperf_jax import jit_expr, vectorize_expr
