@@ -21,8 +21,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cuda12=["cupy-cuda12x"]
-cuda13=["cupy-cuda13x"]
+cupy-cuda12=["cupy-cuda12x"]
+cupy-cuda13=["cupy-cuda13x"]
+jax=["jax[cpu]>=0.4.20"]
+jax-cuda12=["jax[cuda12]>=0.4.20"]
+jax-cuda13=["jax[cuda13]>=0.4.20"]
 
 [tool.ruff]
 line-length = 120
