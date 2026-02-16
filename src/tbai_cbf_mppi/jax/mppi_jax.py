@@ -28,9 +28,7 @@ def setup_jax(enable_x64=True, device=None):
     if device in ("gpu", "cuda"):
       gpus = jax.devices("gpu")
       if not gpus:
-        raise RuntimeError(
-          "No GPU available. Install jax[cuda12] or jax[cuda13]."
-        )
+        raise RuntimeError("No GPU available. Install jax[cuda12] or jax[cuda13].")
       dev = gpus[0]
       jax.config.update("jax_default_device", dev)
       return dev
@@ -320,8 +318,7 @@ def make_mppi_step(config, cost_evaluator, return_optimal_trajectory=False, retu
     # Trajectory rollout via Ahat/Bhat
     v_flat = v.reshape(K, T * 2)
     out = (
-      jnp.matmul(state.Bhat[None, :, :], v_flat[:, :, None]).squeeze(-1)
-      + jnp.matmul(state.Ahat, x0)[None, :]
+      jnp.matmul(state.Bhat[None, :, :], v_flat[:, :, None]).squeeze(-1) + jnp.matmul(state.Ahat, x0)[None, :]
     ).reshape(K, T, 2)
 
     # Cost
@@ -340,6 +337,7 @@ def make_mppi_step(config, cost_evaluator, return_optimal_trajectory=False, retu
 
     # Optional optimal trajectory
     if return_optimal_trajectory:
+
       def integrate_step(x, t):
         u_t = jnp.clip(u[t], -max_v, max_v)
         return x + u_t * dt, x + u_t * dt
@@ -460,6 +458,7 @@ def calc_control_input(
   # Compute optional trajectories
   optimal_traj = None
   if return_optimal_trajectory:
+
     def integrate_step(x, t):
       u_t = jnp.clip(u[t], -config.max_abs_velocity, config.max_abs_velocity)
       x_next = x + u_t * config.dt

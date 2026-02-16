@@ -244,7 +244,10 @@ def test_calc_control_input_shapes():
   system = SimpleSingleIntegrator2D()
   config = MppiConfig(dt=0.02, horizon=10, mc_rollouts=50, sigma=np.eye(2) * 4.0, transition_time=3)
   config, state = create_mppi(
-    system, config, x_desired=np.array([3.0, 3.0]), rng_seed=42,
+    system,
+    config,
+    x_desired=np.array([3.0, 3.0]),
+    rng_seed=42,
   )
 
   def stage_cost(x, y, u1, u2):
@@ -257,7 +260,9 @@ def test_calc_control_input_shapes():
 
   observed_x = np.array([0.0, 0.0])
   control, u_seq, new_state, opt_traj, samp_trajs = calc_control_input(
-    config, state, observed_x,
+    config,
+    state,
+    observed_x,
     [(evaluator, ((), (), ()))],
     return_optimal_trajectory=True,
   )
@@ -411,7 +416,11 @@ def test_make_mppi_step_matches_calc_control_input():
   # Run both with same seed
   _, state1 = create_mppi(system, config, rng_seed=42)
   control1, u1, _, opt1, _ = calc_control_input(
-    config, state1, observed_x, [(evaluator, ((), (), ()))], return_optimal_trajectory=True,
+    config,
+    state1,
+    observed_x,
+    [(evaluator, ((), (), ()))],
+    return_optimal_trajectory=True,
   )
 
   _, state2 = create_mppi(system, config, rng_seed=42)

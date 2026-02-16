@@ -74,6 +74,7 @@ def test_vectorize_expr_basic():
   expr = x**2 + y**2
 
   import numba
+
   fn = vectorize_expr(expr, nbtype=numba.float64)
 
   x_arr = np.array([1.0, 2.0, 3.0])
@@ -89,6 +90,7 @@ def test_vectorize_expr_custom_symbols():
   expr = x - y
 
   import numba
+
   fn = vectorize_expr(expr, nbtype=numba.float64, symbols=["y", "x"])
 
   # With symbols=["y", "x"], first arg is y, second is x
@@ -103,5 +105,6 @@ def test_vectorize_expr_invalid_symbols():
   expr = x**2
 
   import numba
+
   with pytest.raises(AssertionError):
     vectorize_expr(expr, nbtype=numba.float64, symbols=["z"])

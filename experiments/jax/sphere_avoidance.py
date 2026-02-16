@@ -172,7 +172,8 @@ def main(show_animation=True, device="cpu"):
     t1 = time.time()
     x0 = jnp.asarray(system.state)
     control_jax, _, mppi_state, optimal_trajectory, _ = mppi_step(
-      mppi_state, x0,
+      mppi_state,
+      x0,
       (weight1, weight2),  # scalar_args
       (mppi_state.relaxation_alphas,),  # ew_args
       (),  # vw_args

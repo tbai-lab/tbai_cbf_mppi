@@ -3,7 +3,14 @@
 import numpy as np
 import pytest
 from tbai_cbf_mppi.cbf import ControlBarrierFunctionFactory
-from tbai_cbf_mppi.control import VanillaSafetyFilterNew, PDRegulator, ProblemType, Solver, get_default_solver, get_default_solver_options
+from tbai_cbf_mppi.control import (
+  VanillaSafetyFilterNew,
+  PDRegulator,
+  ProblemType,
+  Solver,
+  get_default_solver,
+  get_default_solver_options,
+)
 from tbai_cbf_mppi.systems import SimpleSingleIntegrator2D
 
 

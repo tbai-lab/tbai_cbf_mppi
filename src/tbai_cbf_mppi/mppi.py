@@ -243,24 +243,18 @@ def get_cost_function_parameterized(
   einsum_str = einsum_str.format(args=args, vectors_ev=vectors_ev, vectors_vv=vectors_vv)
 
   args_str = ", ".join(
-    [str(a) for a in scalar_args]
-    + [str(a) for a in vector_args_ew]
-    + [str(a) for a in vector_args_vw]
+    [str(a) for a in scalar_args] + [str(a) for a in vector_args_ew] + [str(a) for a in vector_args_vw]
   )
   args_str = args_str + ", " if args_str else ""
 
   if backend == "numpy":
     use_str = ", ".join(
-      [f"{a}={a}" for a in scalar_args]
-      + [f"{a}={a}[t]" for a in vector_args_ew]
-      + [f"{a}={a}" for a in vector_args_vw]
+      [f"{a}={a}" for a in scalar_args] + [f"{a}={a}[t]" for a in vector_args_ew] + [f"{a}={a}" for a in vector_args_vw]
     )
   elif backend == "cupy":
     ## Cuda backend does not support keyword arguments
     use_str = ", ".join(
-      [str(a) for a in scalar_args]
-      + [f"{a}[t]" for a in vector_args_ew]
-      + [str(a) for a in vector_args_vw]
+      [str(a) for a in scalar_args] + [f"{a}[t]" for a in vector_args_ew] + [str(a) for a in vector_args_vw]
     )
 
   use_str = use_str + ", " if use_str else ""
